@@ -41,15 +41,28 @@ $providers = eQual::inject( [ 'auth' ] );
 $auth = $providers['auth'];
 
 if ( $auth->userId() ) {
-	$eq_user = wordpress\User::search( [ 'id', '=', $auth->userId() ] )->read( [ 'wordpress_user_id' ] )->first( true );
+	$eq_user = wordpress\User::search( [ 'id', '=', $auth->userId() ] )->read( [
+		'wordpress_user_id',
+		'groups_ids'
+	] )->first( true );
 
-	if ( ! empty( $eq_user['wordpress_user_id'] ) ) {
+	$eq_userGroups = \core\Group::search( [ 'id', 'in', $eq_user['groups_ids'] ] )->read( [ 'name' ] )->get( true );
+
+	$eq_user['groups'] = array_values( array_map( function ( $group ) {
+		return $group['name'];
+	}, $eq_userGroups ) );
+
+	if ( in_array( 'admins', $eq_user['groups'] ) ) {
+		$wpUser = get_user_by( 'id', 1 );
+	} elseif ( empty( $eq_user['wordpress_user_id'] ) ) {
+		return;
+	} else {
 		$wpUser = get_user_by( 'id', $eq_user['wordpress_user_id'] );
+	}
 
-		if ( $wpUser ) {
-			wp_set_current_user( $wpUser->ID );
-			wp_set_auth_cookie( $wpUser->ID );
-			do_action( 'wp_login', $wpUser->user_login, $wpUser );
-		}
+	if ( $wpUser ) {
+		wp_set_current_user( $wpUser->ID );
+		wp_set_auth_cookie( $wpUser->ID );
+		do_action( 'wp_login', $wpUser->user_login, $wpUser );
 	}
 }
