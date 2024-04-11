@@ -79,16 +79,17 @@ list( $context, $om, $auth ) = [ $providers['context'], $providers['orm'], $prov
 $user = \wordpress\User::search( [ 'login', '=', $params['email'] ] )->read( [ 'id' ] )->first( true );
 
 if ( ! $user ) {
-	try {
-		/** @var \equal\http\HttpResponse $response */
-		eQual::run( 'do', 'user_signup', $params );
+	eQual::run( 'do', 'user_signup', $params );
 
-		$user = \wordpress\User::search( [ 'login', '=', $params['email'] ] )
-		                       ->update( [ 'wordpress_user_id' => $params['wordpress_user_id'] ] );
+	$user   = \wordpress\User::search( [ 'login', '=', $params['email'] ] );
+	$userId = $user->first( true )['id'];
+	\wordpress\User::id( $userId )->update( [
+		'wordpress_user_id' => $params['wordpress_user_id'],
+		'validated'         => true,
+		'password'          => $params['password']
+	] );
 
-	} catch ( Exception $e ) {
-		throw new Exception( 'user_signup_failed', QN_REPORT_ERROR, $e->getMessage() );
-	}
+	\wordpress\User::onupdatePassword( $om, [ $userId ], [ 'password' => $params['password'] ], constant( 'DEFAULT_LANG' ) );
 }
 
 $context->httpResponse()
