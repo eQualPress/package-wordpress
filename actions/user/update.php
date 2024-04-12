@@ -15,8 +15,9 @@ list( $params, $providers ) = eQual::announce( [
 		],
 		'update_wp' => [
 			'description' => 'Flag for updating the WordPress user.',
-			'type'        => 'boolean',
-			'default'     => true
+			'type'        => 'string',
+			'default'     => '0',
+			'required'    => false
 		]
 	],
 	'access'      => [
@@ -27,36 +28,71 @@ list( $params, $providers ) = eQual::announce( [
 		'charset'       => 'UTF-8',
 		'accept-origin' => '*'
 	],
-	'providers'   => []
+	'providers'   => [ 'context', 'auth', 'orm' ],
 ] );
+
+$update_wp = true;
+
+if ( $params['update_wp'] === '0' ) {
+	$update_wp = false;
+}
+
+include_once ABSPATH . '/wp-content/Log.php';
+\wpcontent\Log::report( 'eq_wordpress_user_update => $params', $params );
+
+\wpcontent\Log::report( "eq_wordpress_user_update: array keys fields param", array_keys( $params['fields'] ) );
 
 $fields   = array_keys( $params['fields'] );
 $fields[] = 'wordpress_user_id';
+$fields[] = 'groups_ids';
 
-$eq_user        = \wordpress\User::id( $params['id'] )->read( $fields );
+
+\wpcontent\Log::report( 'eq_wordpress_user_update => $fields', $fields );
+\wpcontent\Log::report( 'eq_wordpress_user_update => $fields array_values', array_values( $fields ) );
+
+$eq_user = \wordpress\User::id( $params['id'] )->read( $fields )->first( true );
+
+\wpcontent\Log::report( 'eq_wordpress_user_update => $eqUser', $eq_user );
+
 $eq_user_groups = \core\Group::search( [ 'id', 'in', $eq_user['groups_ids'] ] )->read( [ 'name' ] )->get( true );
+
+\wpcontent\Log::report( 'eq_wordpress_user_update => eq_user_groups', $eq_user_groups );
 
 $eq_user_groups = array_values( array_map( function ( $group ) {
 	return $group['name'];
 }, $eq_user_groups ) );
 
+\wpcontent\Log::report( 'eq_wordpress_user_update => eq_user_groups', $eq_user_groups );
 
-if ( ! $eq_user->first( true ) ) {
-	throw new Exception( "user_not_found", QN_ERROR_INVALID_USER );
+
+if ( empty( $eq_user ) ) {
+	\wpcontent\Log::report( 'eq_wordpress_user_update: eqUser not found' );
+//	throw new Exception( "user_not_found", QN_ERROR_INVALID_USER );
 }
 
-$eq_user
-	->update( $params['fields'] )
-	->read( $fields );
+\wpcontent\Log::report( 'eq_wordpress_user_update => $eq_user before update', $eq_user );
 
-$eq_user = $eq_user->read( $fields )->first( true );
+\wordpress\User::search( [ 'login', '=', $params['fields']['login'] ] )
+               ->update( $params['fields'] );
+
+$eq_user = \wordpress\User::search( [ 'login', '=', $params['fields']['login'] ] )
+                          ->read( [ 'wordpress_user_id', 'firstname', 'lastname' ] )
+                          ->first( true );
+
+\wpcontent\Log::report( 'eq_wordpress_user_update => $eq_user after update', $eq_user );
+
+\wpcontent\Log::report( "test if 1", $update_wp ? 'true' : 'false' );
+\wpcontent\Log::report( "test if 2", isset( $eq_user['wordpress_user_id'] ) ? 'true' : 'false' );
+\wpcontent\Log::report( "test if 3", in_array( 'users', $eq_user_groups ) ? 'true' : 'false' );
 
 if (
-	$params['update_wp'] &&
-	! empty( $eq_user['wordpress_user_id'] ) &&
-	in_array( 'admins', $eq_user_groups )
+	$update_wp &&
+	isset( $eq_user['wordpress_user_id'] ) &&
+	in_array( 'users', $eq_user_groups )
 ) {
-	$wp_user = get_user_by( 'id', $eq_user['wordpress_user_id'] );
+	$wp_user = get_user_by( 'ID', $eq_user['wordpress_user_id'] );
+
+	\wpcontent\Log::report( 'eq_wordpress_user_update: inside if wordpress_user_update', $wp_user );
 
 	if ( $wp_user ) {
 		foreach ( $params['fields'] as $key => $value ) {
