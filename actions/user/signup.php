@@ -75,7 +75,6 @@ list( $params, $providers ) = eQual::announce( [
  */
 list( $context, $om, $auth ) = [ $providers['context'], $providers['orm'], $providers['auth'] ];
 
-// check if the user is already registered
 $user = \wordpress\User::search( [ 'login', '=', $params['email'] ] )->read( [ 'id' ] );
 
 $message = 'User already registered.';

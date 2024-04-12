@@ -2,7 +2,6 @@
 
 include_once ABSPATH . '/wp-load.php';
 
-// announce script and fetch parameters values
 list( $params, $providers ) = eQual::announce( [
 	'description' => "Sign a user out for eQual and WordPress.",
 	'params'      => [],

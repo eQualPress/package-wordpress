@@ -9,7 +9,6 @@ use equal\auth\AuthenticationManager;
 
 include_once ABSPATH . '/wp-load.php';
 
-// announce script and fetch parameters values
 list( $params, $providers ) = eQual::announce( [
 	'description' => "Attempts to log a user in eQual and WordPress.",
 	'params'      => [
