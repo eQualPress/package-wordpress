@@ -76,24 +76,40 @@ list( $params, $providers ) = eQual::announce( [
 list( $context, $om, $auth ) = [ $providers['context'], $providers['orm'], $providers['auth'] ];
 
 // check if the user is already registered
-$user = \wordpress\User::search( [ 'login', '=', $params['email'] ] )->read( [ 'id' ] )->first( true );
+$user = \wordpress\User::search( [ 'login', '=', $params['email'] ] )->read( [ 'id' ] );
 
-if ( ! $user ) {
-	eQual::run( 'do', 'user_signup', $params );
+$message = 'User already registered.';
 
-	$user   = \wordpress\User::search( [ 'login', '=', $params['email'] ] );
-	$userId = $user->first( true )['id'];
-	\wordpress\User::id( $userId )->update( [
+if ( ! $user->first( true ) ) {
+//eQual::run( 'do', 'user_signup', $params );
+
+	\wordpress\User::create( [
 		'wordpress_user_id' => $params['wordpress_user_id'],
+		'login'             => $params['email'],
+		'password'          => password_hash( $params['password'], PASSWORD_BCRYPT ),
+		'firstname'         => $params['firstname'],
+		'lastname'          => $params['lastname'],
+		'username'          => $params['username'] ?? mb_split( '@', $params['email'] )[0],
+		'language'          => constant( 'DEFAULT_LANG' ),
+		'send_confirm'      => false,
 		'validated'         => true,
-		'password'          => $params['password']
 	] );
 
-	\wordpress\User::onupdatePassword( $om, [ $userId ], [ 'password' => $params['password'] ], constant( 'DEFAULT_LANG' ) );
+	$user = \wordpress\User::search( [ 'login', '=', $params['email'] ] )
+	                       ->read( [ 'id', 'password' ] )
+	                       ->first( true );
+
+
+	$usersIdsGroup = \core\Group::search( [ 'name', '=', 'users' ] )->read( [ 'users_ids' ] )->get( true );
+	$usersIds      = $usersIdsGroup['users_ids'];
+	$usersIds[]    = $user['id'];
+	\core\Group::search( [ 'name', '=', 'users' ] )->update( [ 'users_ids' => $usersIds ] );
+
+	$message = 'User successfully registered.';
 }
 
 $context->httpResponse()
-        ->setBody( [ 'message' => 'User successfully registered.' ] )
+        ->setBody( [ 'message' => $message ] )
         ->setContentType( 'application/json' )
         ->statusCode( 201 )
         ->send();
