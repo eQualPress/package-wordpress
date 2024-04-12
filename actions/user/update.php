@@ -53,8 +53,13 @@ if ( empty( $eq_user ) ) {
 	throw new Exception( "user_not_found", QN_ERROR_INVALID_USER );
 }
 
+$attributes = $params['fields'];
+if ( isset( $attributes['password'] ) ) {
+	$attributes['password'] = password_hash( $attributes['password'], PASSWORD_BCRYPT );
+}
+
 \wordpress\User::search( [ 'login', '=', $params['fields']['login'] ] )
-               ->update( $params['fields'] );
+               ->update( $attributes );
 
 $eq_user = \wordpress\User::search( [ 'login', '=', $params['fields']['login'] ] )
                           ->read( [ 'wordpress_user_id', 'firstname', 'lastname' ] )
