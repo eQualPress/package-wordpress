@@ -3,12 +3,12 @@
 list( $params, $providers ) = eQual::announce( [
 	'description' => "Update (fully or partially) the given object.",
 	'params'      => [
-		'id'     => [
+		'id'        => [
 			'description' => 'Unique identifier of the object to update.',
 			'type'        => 'integer',
 			'default'     => 0
 		],
-		'fields' => [
+		'fields'    => [
 			'description' => 'Associative array mapping fields to be updated with their related values.',
 			'type'        => 'array',
 			'default'     => []
@@ -18,6 +18,9 @@ list( $params, $providers ) = eQual::announce( [
 			'type'        => 'boolean',
 			'default'     => true
 		]
+	],
+	'access'      => [
+		'visibility' => 'public'
 	],
 	'response'    => [
 		'content-type'  => 'application/json',
