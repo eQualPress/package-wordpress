@@ -56,7 +56,6 @@ if (
 	! empty( $eq_user['wordpress_user_id'] ) &&
 	in_array( 'admins', $eq_user_groups )
 ) {
-
 	$wp_user = get_user_by( 'id', $eq_user['wordpress_user_id'] );
 
 	if ( $wp_user ) {
