@@ -1,5 +1,7 @@
 <?php
 
+namespace wordpress/classes;
+
 class Post extends \equal\orm\Model {
 	public static function getColumns(): array {
 		return [
