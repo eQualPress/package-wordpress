@@ -1,0 +1,8 @@
+{
+    "envinfo-temp": {
+        "GET": {
+            "description": "Returns the current installation configuration.",
+            "operation": "?get=wordpress_envinfo-temp"
+        }
+    }
+}
