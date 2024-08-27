@@ -15,7 +15,7 @@ list( $params, $providers ) = eQual::announce( [
 
 list( $context ) = [ $providers['context'] ];
 
-$config = eQual::run( 'get', 'envinfo-temp' );
+$config = eQual::run( 'get', 'envinfo' );
 
 //$config = json_decode( $config, true );
 //
